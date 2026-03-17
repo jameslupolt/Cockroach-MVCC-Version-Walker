@@ -44,9 +44,13 @@ def get_primary_key_columns(conn, table: str) -> list[str]:
     """Auto-detect primary key columns for a table."""
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT column_name FROM information_schema.key_column_usage "
-            "WHERE table_name = %s AND constraint_name = 'primary' "
-            "ORDER BY ordinal_position",
+            "SELECT kcu.column_name "
+            "FROM information_schema.key_column_usage kcu "
+            "JOIN information_schema.table_constraints tc "
+            "  ON kcu.constraint_name = tc.constraint_name "
+            "  AND kcu.table_schema = tc.table_schema "
+            "WHERE kcu.table_name = %s AND tc.constraint_type = 'PRIMARY KEY' "
+            "ORDER BY kcu.ordinal_position",
             (table,),
         )
         cols = [row[0] for row in cur.fetchall()]
